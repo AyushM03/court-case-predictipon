@@ -1,0 +1,13 @@
+pandas>=2.2
+pyarrow>=15
+numpy
+matplotlib
+seaborn
+jupyter
+lifelines>=0.29
+scikit-learn>=1.4
+scikit-survival
+xgboost
+shap
+pytest
+-e .
