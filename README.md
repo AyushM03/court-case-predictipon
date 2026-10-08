@@ -32,8 +32,8 @@ docs/             PRD, architecture, decisions, tasks, data dictionary
 ```bash
 python -m venv .venv && .venv\Scripts\activate
 pip install -r requirements.txt
-# put DDL files in data/raw/ (see docs/DATA.md), then:
-python -m court_delay.ingest --state Maharashtra --years 2010-2018
+python -m court_delay.fetch download keys cases   # streams the ~5 GB DDL zip, keeps what we need
+python -m court_delay.ingest --state Maharashtra --years 2010-2018 --skip-acts
 ```
 
 ## Data & license

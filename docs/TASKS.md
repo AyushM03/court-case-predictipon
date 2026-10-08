@@ -3,9 +3,9 @@
 ## Week 1 — Shrink the problem
 - [x] Project structure, docs, requirements
 - [x] Ingest script: state filter, key joins, duration + censoring (tested on synthetic data)
-- [ ] Download DDL keys + one year of cases (see docs/DATA.md)
-- [ ] Run ingest on 2010 only; confirm column names match `config.py`
-- [ ] Run for all years 2010–2018
+- [x] Download DDL keys + cases (`court_delay.fetch`; all years in `cases.tar.gz`)
+- [x] Run ingest on 2010 only; confirm column names match `config.py` (they do)
+- [x] Run for all years 2010–2018 (10.06M cases)
 - [ ] `notebooks/01_explore.ipynb`: what each column means, null rates, code→name joins, fill docs/DATA.md
 
 ## Week 2 — EDA

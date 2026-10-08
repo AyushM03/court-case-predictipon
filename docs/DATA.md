@@ -45,4 +45,55 @@ Raw columns plus: `state_name`, `district_name`, `type_label`, `disp_label`, `fi
 `decision_date`, `event` (1 = decided, 0 = pending/censored), `duration_days`, `bad_dates` (flag).
 
 ## Findings log
-(Record what you learn about each column in Week 1 here: null rates, odd codes, surprises.)
+### Download layout (verified 2026-10-08)
+- The Dropbox folder downloads only as one ~5.1 GB zip, with `csv/` and `dta/` copies of everything.
+- `csv/keys/keys.tar.gz` has 9 key tables, including `judge_case_merge_key` (520 MB, unused so far).
+- `csv/cases/cases.tar.gz` (1.4 GB) holds **all years** as plain CSVs: 0.86 GB (2010) up to 2.7 GB (2018).
+  Ingest streams each year straight out of this archive, with nothing extracted.
+- Get it with `python -m court_delay.fetch download cases`.
+
+### Keys
+- Maharashtra is `state_code` **1** in every year.
+- Key column names match `config.py`.
+- **The district key is not per-year.** Each district is listed once, under the year it first
+  appeared (625 rows for 2010; a few for 2011, 2014 and 2017). Joining on year left 9.2M rows
+  from 2011–18 without a district name, so it is now joined on (state_code, dist_code) only
+  (D-009). Two codes have corrected spellings, and the latest one is used:
+  Jaipur Metro → Jaipur Metro I, Hoshiarpurr → Hoshiarpur.
+- The type, disposition and state keys do cover every year from 2010 to 2018.
+- In `type_name_key`, the codes load as floats (1.0). The joins still match.
+
+### cases_2010 (Maharashtra)
+- 866,279 of 4,281,327 national rows (20%). 40 districts, 637 case-type labels.
+  Every district, type and disposition code joins to a label.
+- Null rates:
+  - `date_of_filing`: 0%
+  - `date_of_decision`: 7.1%
+  - `date_first_list`: 0.9%
+  - `date_last_list`: 2.9%
+- **Typo dates:**
+  - `date_first_list` goes up to 2022.
+  - `date_next_list` goes up to 2101.
+  - Real activity stops around early 2020: 2,794 decisions in 2019 and 173 in 2020.
+  - So the censoring cutoff is the 99.9th percentile of decision and last-hearing dates
+    (D-007), which gives **2019-08-21**.
+- **Bad dates:** 19,476 rows (2.2%). All have the decision date before the filing date.
+- 432 decisions fall after the cutoff and are treated as censored at the cutoff.
+- 1,022 cases have no decision date but do have a disposition label. They are treated as
+  pending for now. Look into them in Week 2.
+- Decided cases: median 619 days, mean 834 days. Pending: about 3,330 days (censored at the cutoff).
+  These are 2010-only numbers, computed with a 2010-only cutoff of 2019-08-21.
+
+### All years 2010–2018 (Maharashtra)
+- **10,059,428 cases**, about 20% of national rows every year (866k in 2010, 1.37M in 2018).
+  All 40 districts are labelled.
+- Bad dates: 52,370 (0.5%).
+- **Cutoff 2020-09-10** (99.9th percentile).
+  - Decisions run at about 8k/month in Jan–Feb 2020 and 3.3k in March.
+  - They fall to about 10–24/month in April–May 2020 (**COVID lockdown**), then 100–570/month
+    from June to September.
+  - The handful of later dates are typos (2101, 2116).
+  - COVID is a structural break to handle in modelling.
+- Pending share rises steeply by filing year: 7.3% (2010), 11.4% (2012), 36% (2016),
+  44% (2017), 55.5% (2018). Overall 27.6% are censored.
+- The decided-only median is 246 days, which is heavily biased low. Use Kaplan-Meier.

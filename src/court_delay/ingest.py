@@ -5,6 +5,12 @@ Usage:
     python -m court_delay.ingest --state Maharashtra --years 2010 --skip-acts
 """
 import argparse
+import csv
+import gzip
+import io
+import re
+import tarfile
+from contextlib import contextmanager
 from pathlib import Path
 
 import pandas as pd
@@ -21,6 +27,48 @@ def find_file(folder: Path, stem: str) -> Path:
         if path.exists():
             return path
     raise FileNotFoundError(f"{stem}[.gz] not found in {folder} (see docs/DATA.md)")
+
+
+class _RawReader(io.RawIOBase):
+    """Adapts a streaming tar member (no seekable()) so io.TextIOWrapper accepts it."""
+    def __init__(self, src):
+        self.src = src
+
+    def readable(self):
+        return True
+
+    def readinto(self, b):
+        data = self.src.read(len(b))
+        b[:len(data)] = data
+        return len(data)
+
+
+@contextmanager
+def open_cases_year(year: int, cases_dir: Path):
+    """Yield (name, text stream) for cases_<year>: a loose CSV if present, else streamed straight
+    out of cases.tar.gz (DDL ships all years in one archive; extracting them needs too much disk)."""
+    try:
+        path = find_file(cases_dir, f"cases_{year}.csv")
+    except FileNotFoundError:
+        path = None
+    if path is not None:
+        with open(path, "rb") as raw:
+            binary = gzip.open(raw) if path.suffix == ".gz" else raw
+            yield path.name, io.TextIOWrapper(binary, encoding="utf-8", newline="")
+        return
+    archive = cases_dir / "cases.tar.gz"
+    if not archive.exists():
+        raise FileNotFoundError(f"cases_{year}.csv[.gz] or {archive.name} not in {cases_dir} "
+                                "(run: python -m court_delay.fetch download cases)")
+    pattern = re.compile(rf"(^|/)cases_{year}\.csv$")
+    with tarfile.open(archive, "r|gz") as tar:
+        for member in tar:
+            if member.isfile() and pattern.search(member.name):
+                print(f"  {year}: streaming {member.name} from {archive.name}")
+                binary = io.BufferedReader(_RawReader(tar.extractfile(member)), 1 << 20)
+                yield member.name, io.TextIOWrapper(binary, encoding="utf-8", newline="")
+                return
+    raise FileNotFoundError(f"cases_{year}.csv not found inside {archive}")
 
 
 def check_columns(path: Path, expected: list[str]) -> None:
@@ -79,15 +127,19 @@ def filter_cases_year(year: int, state_code: int, state: str,
     if out.exists():
         print(f"  {year}: already done -> {out.name}")
         return out
-    path = find_file(raw_dir / "cases", f"cases_{year}.csv")
-    check_columns(path, C.CASE_COLS)
-
-    parts, total = [], 0
-    reader = pd.read_csv(path, usecols=C.CASE_COLS, chunksize=C.CHUNK_ROWS,
-                         dtype={"ddl_case_id": str, "judge_position": str})
-    for chunk in reader:
-        total += len(chunk)
-        parts.append(chunk[chunk["state_code"] == state_code])
+    with open_cases_year(year, raw_dir / "cases") as (name, f):
+        header = next(csv.reader([f.readline()]))
+        missing = [c for c in C.CASE_COLS if c not in header]
+        if missing:
+            raise KeyError(f"{name} is missing {missing}.\nActual columns: {header}\n"
+                           "Update src/court_delay/config.py to match.")
+        parts, total = [], 0
+        reader = pd.read_csv(f, names=header, header=None, usecols=C.CASE_COLS,
+                             chunksize=C.CHUNK_ROWS,
+                             dtype={"ddl_case_id": str, "judge_position": str})
+        for chunk in reader:
+            total += len(chunk)
+            parts.append(chunk[chunk["state_code"] == state_code])
     df = pd.concat(parts, ignore_index=True)
     out_dir.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out, index=False)
@@ -119,9 +171,16 @@ def filter_acts(case_ids: set[str], state: str,
 # ---------- step 4: join keys, compute duration + censoring ----------
 
 def join_label(df: pd.DataFrame, key: pd.DataFrame, code_col: str,
-               label_col: str, new_name: str, extra_on: list[str] = ()) -> pd.DataFrame:
-    """Left-join a lookup, joining on `year` too when the key has it."""
-    on = [c for c in ["year", *extra_on] if c in key.columns] + [code_col]
+               label_col: str, new_name: str, extra_on: list[str] = (),
+               by_year: bool = True) -> pd.DataFrame:
+    """Left-join a lookup, joining on `year` too when the key has it and `by_year` is set.
+
+    With by_year=False the key is treated as one cumulative list (DDL's district key lists each
+    district once, under the year it first appeared); the latest spelling of a code wins.
+    """
+    if not by_year and "year" in key.columns:
+        key = key.sort_values("year").drop_duplicates([*extra_on, code_col], keep="last")
+    on = [c for c in ["year", *extra_on] if c in key.columns and (by_year or c != "year")] + [code_col]
     key = key[on + [label_col]].drop_duplicates(on).rename(columns={label_col: new_name})
     merged = df.merge(key, on=on, how="left", validate="many_to_one")
     unmatched = merged[new_name].isna() & merged[code_col].notna()
@@ -134,7 +193,10 @@ def add_survival_columns(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Timestamp]:
     for col in C.DATE_COLS:
         df[col] = pd.to_datetime(df[col], errors="coerce")
     # Cutoff = latest date that has actually happened in the data (next_list is a future date).
-    cutoff = df[["date_of_decision", "date_last_list", "date_first_list"]].max().max()
+    # Use a high quantile, not the max: a few typo dates (e.g. 2022 first hearings in data
+    # collected ~2019-20) would otherwise push the cutoff years too late.
+    observed = pd.concat([df["date_of_decision"], df["date_last_list"]]).dropna()
+    cutoff = observed.quantile(C.CUTOFF_QUANTILE).normalize()
 
     df["filing_date"] = df["date_of_filing"]
     df["decision_date"] = df["date_of_decision"].where(df["date_of_decision"] <= cutoff)
@@ -161,7 +223,8 @@ def build_survival_table(state: str, years: list[int], keys_dir: Path = C.RAW / 
     dist = read_key(C.DISTRICT_KEY[0], keys_dir)
     dist = dist.rename(columns={pick_col(dist, ["state_code", "state"]): "state_code",
                                 pick_col(dist, ["dist_code", "district"]): "dist_code"})
-    df = join_label(df, dist, "dist_code", C.DISTRICT_KEY[1], "district_name", ["state_code"])
+    df = join_label(df, dist, "dist_code", C.DISTRICT_KEY[1], "district_name", ["state_code"],
+                    by_year=False)
     df = join_label(df, read_key(C.TYPE_KEY[0], keys_dir), "type_name", C.TYPE_KEY[1], "type_label")
     df = join_label(df, read_key(C.DISP_KEY[0], keys_dir), "disp_name", C.DISP_KEY[1], "disp_label")
 

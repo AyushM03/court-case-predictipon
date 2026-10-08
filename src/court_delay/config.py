@@ -29,3 +29,6 @@ ACT_COLS = ["ddl_case_id", "act", "section", "criminal"]
 
 # Dates outside [MIN_VALID_DATE, cutoff] are treated as data errors.
 MIN_VALID_DATE = "2000-01-01"
+
+# Censoring cutoff = this quantile of observed decision / last-hearing dates (robust to typo dates).
+CUTOFF_QUANTILE = 0.999

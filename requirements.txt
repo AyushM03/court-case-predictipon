@@ -10,4 +10,5 @@ scikit-survival
 xgboost
 shap
 pytest
+httpx
 -e .

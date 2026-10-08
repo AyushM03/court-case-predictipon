@@ -40,7 +40,8 @@ def raw(tmp_path):
     return tmp_path
 
 
-def test_pipeline(raw):
+def test_pipeline(raw, monkeypatch):
+    monkeypatch.setattr(C, "CUTOFF_QUANTILE", 1.0)  # too few rows for a quantile to mean much
     code = ingest.resolve_state_code("maharashtra", raw / "raw" / "keys")
     assert code == 1
 
@@ -60,6 +61,17 @@ def test_pipeline(raw):
     assert df.loc["c", "bad_dates"] and not df.loc["a", "bad_dates"]
 
 
+def test_cutoff_ignores_typo_dates():
+    n = 10_000
+    df = pd.DataFrame({c: [None] * n for c in C.DATE_COLS})
+    df["date_of_filing"] = "2010-01-01"
+    df["date_of_decision"] = "2015-01-01"
+    df["date_last_list"] = "2019-06-30"
+    df.loc[0, "date_last_list"] = "2099-01-01"  # one typo
+    _, cutoff = ingest.add_survival_columns(df)
+    assert cutoff == pd.Timestamp("2019-06-30")
+
+
 def test_missing_column_message(tmp_path):
     p = tmp_path / "x.csv"
     pd.DataFrame({"foo": [1]}).to_csv(p, index=False)
@@ -70,3 +82,13 @@ def test_missing_column_message(tmp_path):
 def test_parse_years():
     assert ingest.parse_years("2010-2012") == [2010, 2011, 2012]
     assert ingest.parse_years("2010,2015") == [2010, 2015]
+
+
+def test_district_key_is_cumulative_not_per_year():
+    # DDL's district key lists each district once, under the year it first appeared.
+    key = pd.DataFrame({"year": [2010, 2010, 2017], "state_code": [1, 22, 22], "dist_code": [1, 18, 18],
+                        "district_name": ["Pune", "Hoshiarpurr", "Hoshiarpur"]})
+    cases = pd.DataFrame({"year": [2010, 2015, 2012], "state_code": [1, 1, 22], "dist_code": [1, 1, 18]})
+    out = ingest.join_label(cases, key, "dist_code", "district_name", "district_name",
+                            ["state_code"], by_year=False)
+    assert out["district_name"].tolist() == ["Pune", "Pune", "Hoshiarpur"]
