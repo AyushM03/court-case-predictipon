@@ -16,6 +16,7 @@ from pathlib import Path
 import pandas as pd
 
 from court_delay import config as C
+from court_delay.categories import add_case_category
 
 
 # ---------- helpers ----------
@@ -227,6 +228,7 @@ def build_survival_table(state: str, years: list[int], keys_dir: Path = C.RAW / 
                     by_year=False)
     df = join_label(df, read_key(C.TYPE_KEY[0], keys_dir), "type_name", C.TYPE_KEY[1], "type_label")
     df = join_label(df, read_key(C.DISP_KEY[0], keys_dir), "disp_name", C.DISP_KEY[1], "disp_label")
+    df = add_case_category(df)
 
     df, cutoff = add_survival_columns(df)
 

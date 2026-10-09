@@ -53,6 +53,7 @@ def test_pipeline(raw, monkeypatch):
     assert set(df.index) == {"a", "b", "c"}
     assert df.loc["a", "district_name"] == "Pune"
     assert df.loc["b", "type_label"] == "criminal"
+    assert df.loc["a", "case_category"] == "civil_suit" and df.loc["a", "is_criminal"] == 0
 
     assert df.loc["a", "event"] == 1 and df.loc["a", "duration_days"] == 364
     # pending case is censored at the latest observed date, not dropped

@@ -19,6 +19,7 @@ The project predicts how fast the system is, not who wins, and does not score ju
 .venv/Scripts/python -m court_delay.fetch download cases     # stream zip -> data/raw/cases/cases.tar.gz
 .venv/Scripts/python -m court_delay.fetch extract 2010       # optional: loose CSV (ingest doesn't need it)
 .venv/Scripts/python -m court_delay.ingest --state Maharashtra --years 2010 --skip-acts
+.venv/Scripts/python -m court_delay.categories               # add case_category to existing parquet
 .venv/Scripts/python -m pytest -q
 ```
 
@@ -69,4 +70,24 @@ The project predicts how fast the system is, not who wins, and does not score ju
   - Ingested all years 2010–2018: **10,059,428 cases**, cutoff 2020-09-10, 27.6% censored.
     Pending share by filing year runs from 7% (2010) to 55% (2018).
   - Fixed the district join (D-009). 9 tests pass.
-  - **Next:** `notebooks/01_explore.ipynb`, then Week 2 EDA.
+- **2026-10-09:**
+  - Wrote `notebooks/01_explore.ipynb`, a column audit of all 10M rows. Week 1 is done.
+  - The court and purpose keys join 100% on (year, code).
+  - The gender flags use the sentinels −9998 and −9999.
+  - Only 1,717 cases have a real disposition with no date.
+  - Transfer and Lok Adalat referrals are about 11% of decisions; decide how to treat them in
+    Week 3.
+  - 52k `bad_dates` rows are all negative; drop them.
+  - 6.6% of cases close on the filing day.
+  - The 1,160 type labels need mapping to categories.
+  - Run notebooks with `nbclient`, because `jupyter nbconvert` crashes on a broken global
+    `jupyter_contrib_nbextensions`.
+  - Added `categories.py` (D-010):
+    - It maps 1,160 type labels to 18 categories plus `is_criminal`, using regex rules and
+      overriding them by `judge_position` for specialised courts. 0.2% of cases stay "other".
+    - Ingest calls it, and `python -m court_delay.categories` adds the columns to the existing
+      parquet in batches.
+    - Kaplan-Meier medians run from 12 days (bail) to 1,664 days (RCC warrant cases).
+      70% of cases are criminal.
+    - 38 tests pass.
+  - **Next:** `notebooks/02_eda.ipynb` (Week 2 EDA charts).

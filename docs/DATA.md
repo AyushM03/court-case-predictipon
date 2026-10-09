@@ -42,7 +42,8 @@ columns when one it expects is missing.
 
 ## Processed table: `data/processed/cases_<state>.parquet`
 Raw columns plus: `state_name`, `district_name`, `type_label`, `disp_label`, `filing_date`,
-`decision_date`, `event` (1 = decided, 0 = pending/censored), `duration_days`, `bad_dates` (flag).
+`decision_date`, `event` (1 = decided, 0 = pending/censored), `duration_days`, `bad_dates` (flag),
+`case_category` (18 groups + `other`, D-010), `is_criminal` (1/0, NA for `other`).
 
 ## Findings log
 ### Download layout (verified 2026-10-08)
@@ -97,3 +98,65 @@ Raw columns plus: `state_name`, `district_name`, `type_label`, `disp_label`, `fi
 - Pending share rises steeply by filing year: 7.3% (2010), 11.4% (2012), 36% (2016),
   44% (2017), 55.5% (2018). Overall 27.6% are censored.
 - The decided-only median is 246 days, which is heavily biased low. Use Kaplan-Meier.
+
+### Column audit, all years (`notebooks/01_explore.ipynb`, 2026-10-09)
+- **Nulls:**
+  - Decision date: 27.5% (the pending cases).
+  - `purpose_name`: 2.2%.
+  - Hearing dates: 1.3–1.6%.
+  - Labels: 0%.
+- **Court key:** joins 100% on (year, dist_code, court_no). It is per year, unlike the district
+  key. There are 633 courts, and 11 change name over the years.
+- **Purpose key:** joins 100% on (year, code). Codes are year-specific (5,550 distinct), so they
+  must be normalised before use as a feature.
+- **Gender flags:** these use the sentinels −9998 (unclear) and −9999 (missing name), not NaN.
+  - Petitioner gender is unclear for 48% of cases (often the State or a company).
+  - Defendant-advocate gender is missing for 76%.
+  - Treat all of them as categories.
+- **Dispositions:** the "1,022 cases with a disposition but no decision date" figure counted
+  `disposition var missing` as a disposition. Only **1,717 cases (0.02%) across all years** have a
+  real disposition with no date, so leaving them censored is fine. 33,329 decided cases have
+  `disposition var missing`, and they are still decided.
+- **Transferred** (~236k) and **referred to Lok Adalat** (~546k) make up about 11% of decisions.
+  They close the case in this court without resolving the dispute. Decide in Week 3 whether to
+  treat them as an event, as censoring, or as a competing risk.
+- **Durations:**
+  - All 52,370 `bad_dates` rows have negative durations (minimum −5,526 days), and no other row
+    is negative. Drop them before fitting.
+  - 668,934 cases (6.6% of all, 9.2% of decided) close on the filing day. Floor these at 0.5 days
+    for parametric and AFT models.
+  - 50,007 rows have a first hearing before filing (typos).
+- **Case types:** there are 1,160 messy labels, such as `ss cases`, `ss casess` and `s s`.
+  The top 10 cover 70%, the top 50 cover 91% and the top 100 cover 96%. Map them to a
+  `case_category` and a civil/criminal flag in Week 2.
+- **`judge_position`:** 70 free-text values that mix the court type with the judge's
+  designation.
+
+### Case categories (`court_delay.categories`, 2026-10-09)
+70.3% of cases are criminal. The Kaplan-Meier median uses the right-censored durations and
+excludes `bad_dates` rows.
+
+| category | cases | pending | KM median (days) |
+|---|---:|---:|---:|
+| bail_remand | 437k | 0.3% | 12 |
+| criminal_misc | 1.24M | 12% | 97 |
+| succession | 30k | 9% | 140 |
+| civil_misc | 426k | 16% | 218 |
+| family | 374k | 17% | 383 |
+| summary_criminal (SCC) | 3.75M | 25% | 534 |
+| juvenile | 51k | 22% | 559 |
+| criminal_appeal_revision | 163k | 27% | 777 |
+| labour | 160k | 31% | 1,007 |
+| motor_accident | 267k | 31% | 1,141 |
+| sessions_special | 192k | 42% | 1,189 |
+| arbitration_cooperative | 137k | 46% | 1,234 |
+| domestic_violence | 60k | 52% | 1,266 |
+| land_acquisition | 120k | 29% | 1,285 |
+| civil_suit | 964k | 41% | 1,379 |
+| civil_appeal_revision | 180k | 37% | 1,407 |
+| execution | 319k | 45% | 1,569 |
+| regular_criminal (RCC) | 1.12M | 47% | 1,664 |
+| other | 20k | 27% | 519 |
+
+There is a 140× spread between the fastest category (bail) and the slowest (warrant cases).
+Execution of decrees (darkhast) takes longer than the suits that produce those decrees.

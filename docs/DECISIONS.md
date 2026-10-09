@@ -34,3 +34,12 @@ DDL ships all years in one 1.4 GB tarball (2.7 GB for 2018 once extracted), and 
 ## D-009: Join districts on (state_code, dist_code), ignoring year (2026-10-08)
 DDL's district key lists each district once, under the year it first appeared, so it is not a
 per-year table. The type, disposition and state keys are per-year and stay joined on year.
+
+## D-010: Rule-based `case_category` from type label + judge position (2026-10-09)
+Maharashtra has 1,160 free-text type labels for a few dozen real case types. `categories.py`
+maps them to 18 categories plus `is_criminal`. The rules are ordered regexes on the normalised
+label. Specialised courts (family, labour/industrial, co-operative, MACT, juvenile) are
+recognised from `judge_position` first, because their labels ("petition a", "appeal") are
+ambiguous. Magistrate cases are split into summary (SCC / summons) and regular (RCC / warrant).
+0.2% of cases stay "other". Rules are kept instead of a hand-made lookup table so that new years
+and states map without editing a table.

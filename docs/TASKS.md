@@ -6,9 +6,10 @@
 - [x] Download DDL keys + cases (`court_delay.fetch`; all years in `cases.tar.gz`)
 - [x] Run ingest on 2010 only; confirm column names match `config.py` (they do)
 - [x] Run for all years 2010–2018 (10.06M cases)
-- [ ] `notebooks/01_explore.ipynb`: what each column means, null rates, code→name joins, fill docs/DATA.md
+- [x] `notebooks/01_explore.ipynb`: what each column means, null rates, code→name joins, fill docs/DATA.md
 
 ## Week 2 — EDA
+- [x] Map 1,160 type labels → `case_category` + civil/criminal flag
 - [ ] Duration distributions (decided cases) + share pending by filing year
 - [ ] Slowest districts / courts; civil vs criminal; slowest acts & sections
 - [ ] Trends 2010–2018
