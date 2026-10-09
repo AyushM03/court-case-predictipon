@@ -90,4 +90,11 @@ The project predicts how fast the system is, not who wins, and does not score ju
     - Kaplan-Meier medians run from 12 days (bail) to 1,664 days (RCC warrant cases).
       70% of cases are criminal.
     - 38 tests pass.
-  - **Next:** `notebooks/02_eda.ipynb` (Week 2 EDA charts).
+  - Committed `1ac5c03`.
+  - Wrote `notebooks/02_eda.ipynb` with 6 charts in `reports/figures/` (reference dataviz
+    palette: blue = criminal, orange = civil).
+  - KM median 583 days vs decided-only 246. Civil 905 days, criminal 473.
+  - Eight "districts" are Mumbai or statewide court systems (D-009 key).
+  - The day-182 jump is the divorce cooling-off period.
+  - KM flattens past 9 years: 112k cases at risk, 829 decided (stale records?).
+  - **Next:** download `acts_sections` (check disk first) or start Week 3 survival models.

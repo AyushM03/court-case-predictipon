@@ -160,3 +160,29 @@ excludes `bad_dates` rows.
 
 There is a 140× spread between the fastest category (bail) and the slowest (warrant cases).
 Execution of decrees (darkhast) takes longer than the suits that produce those decrees.
+
+### Week 2 EDA (`notebooks/02_eda.ipynb`, 2026-10-09)
+These figures exclude `bad_dates` rows (10,007,058 cases left). Charts are in `reports/figures/`.
+- **KM median: 583 days.** The decided-only median is 246 days. After 1, 3 and 5 years, 58%,
+  37% and 26% of cases are still pending.
+- **Civil vs criminal medians:** 905 vs 473 days.
+- **Districts:** medians run from 107 days (Gadchiroli) to 1,018 days (Thane). The correlation
+  with criminal share is −0.5, so the ranking reflects case mix and needs adjusting in a Cox model.
+- **Court systems in the district key:** eight `district_name` values are Mumbai court systems
+  or statewide tribunals, not geographic districts:
+  - Mumbai: City Civil Court, CMM Courts, Small Causes Court, Motor Accident Claims Tribunal
+  - Statewide: Maharashtra Family Courts, Industrial and Labour Courts, School Tribunals,
+    State Co-operative Appellate Court
+  - Mumbai MACT is the slowest of all at 1,554 days.
+- **Trend, measured as the share decided within a year (KM), which is fair across cohorts:**
+  - criminal: 37% (2010) → 47% (2018)
+  - civil: 27% → 39% (2017) → 32% (2018)
+- **Day-182 jump:** decisions jump from about 5.7k to about 10k per day, driven by family
+  judgements. This matches the 6-month cooling-off period for mutual-consent divorce
+  (HMA s.13B), so it is real, not an artifact.
+- **Plateau after 9 years:** 112k cases are at risk past 9 years, but only 829 of them are
+  decided, so the curve flattens at about 14% still pending. These are probably stale or
+  abandoned records. Consider this before fitting parametric tails.
+- **Slowest courts:** CIVIL COURT J.D. VASAI (64% still pending) and JMFC III Kalyan had decided
+  fewer than half their cases by the cutoff. These are court establishments only; there is no
+  judge-level scoring (D-006).

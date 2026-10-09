@@ -10,10 +10,11 @@
 
 ## Week 2 — EDA
 - [x] Map 1,160 type labels → `case_category` + civil/criminal flag
-- [ ] Duration distributions (decided cases) + share pending by filing year
-- [ ] Slowest districts / courts; civil vs criminal; slowest acts & sections
-- [ ] Trends 2010–2018
-- [ ] 5–6 clean charts saved to reports/figures
+- [x] Duration distributions (decided cases) + share pending by filing year
+- [x] Slowest districts / courts; civil vs criminal
+- [ ] Slowest acts & sections (needs `acts_sections` download + disk check)
+- [x] Trends 2010–2018
+- [x] 5–6 clean charts saved to reports/figures
 
 ## Week 3 — Survival analysis
 - [ ] Kaplan-Meier: overall, by case category, by district (lifelines)
