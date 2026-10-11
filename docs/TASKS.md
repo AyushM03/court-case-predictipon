@@ -12,15 +12,15 @@
 - [x] Map 1,160 type labels → `case_category` + civil/criminal flag
 - [x] Duration distributions (decided cases) + share pending by filing year
 - [x] Slowest districts / courts; civil vs criminal
-- [ ] Slowest acts & sections (needs `acts_sections` download + disk check)
+- [ ] Slowest acts & sections (needs `acts_sections` download + disk check; parked, A: has 3.2 GB free)
 - [x] Trends 2010–2018
 - [x] 5–6 clean charts saved to reports/figures
 
 ## Week 3 — Survival analysis
-- [ ] Kaplan-Meier: overall, by case category, by district (lifelines)
-- [ ] Log-rank tests between groups
-- [ ] Cox PH model; check proportional hazards assumption
-- [ ] Write a plain-English explanation of censoring (README section)
+- [x] Kaplan-Meier: overall, by case category, by district (lifelines)
+- [x] Log-rank tests between groups
+- [x] Cox PH model; check proportional hazards assumption
+- [x] Write a plain-English explanation of censoring (README section)
 
 ## Week 4 — Prediction
 - [ ] Baseline: median duration by case type (KM median)

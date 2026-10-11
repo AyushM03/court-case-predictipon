@@ -14,6 +14,28 @@ estimate toward fast cases, because only the cases that already finished would r
 cases are **right-censored**: we know they lasted *at least* N days. Survival analysis
 (Kaplan-Meier, Cox PH, gradient-boosted survival models) handles them correctly.
 
+## Censoring, in plain English
+Suppose a case was filed in March 2016 and was still open when the data was collected in 2020.
+We don't know how long it will take, but we do know it took **at least 4 years**. That
+"at least" is called **right-censoring**.
+
+There are two easy mistakes:
+- **Drop the open cases.** Only finished cases are left, and those are the faster ones. In this
+  data the median for decided cases only is 246 days. The true median is about 580 days.
+- **Treat "still open" as "finished today".** This cuts every slow case short and again makes
+  courts look faster than they are.
+
+Survival analysis does neither. **Kaplan-Meier** asks a question for each day: of the cases
+still open that morning, what share got decided that day? Multiplying those daily shares together
+gives the share of cases still pending after *t* days. A censored case counts for every day it was
+known to be open, then leaves the calculation without being counted as decided. The **Cox model**
+uses the same idea to compare groups, for example "cases in district A are decided 1.3× as fast
+as in the average district, for the same case type".
+
+Two practical choices: observation ends on 2020-03-15, before the COVID court shutdown
+([D-011](docs/DECISIONS.md)). Cases pending for 9+ years are kept, because most still have
+regular hearings ([D-012](docs/DECISIONS.md)).
+
 ## Stack
 Python · pandas · pyarrow · lifelines · scikit-survival / XGBoost · SHAP · FastAPI · Streamlit or Next.js (demo)
 

@@ -97,4 +97,21 @@ The project predicts how fast the system is, not who wins, and does not score ju
   - Eight "districts" are Mumbai or statewide court systems (D-009 key).
   - The day-182 jump is the divorce cooling-off period.
   - KM flattens past 9 years: 112k cases at risk, 829 decided (stale records?).
-  - **Next:** download `acts_sections` (check disk first) or start Week 3 survival models.
+- **2026-10-11:**
+  - Parked `acts_sections` (A: has 3.2 GB free) and did Week 3.
+  - Added `survival.py`:
+    - `censor_at` ends observation at `ADMIN_CENSOR_DATE` 2020-03-15 (D-011).
+    - `aggregate` collapses cases to (duration, event, n) for fast weighted KM.
+  - 42 tests pass.
+  - Only 0.03% of decisions fall in Mar–Sep 2020. The 111k cases pending 9+ years are still being
+    heard, so they stay censored (D-012).
+  - Wrote `notebooks/03_survival.ipynb` with figures 07–10:
+    - The stratified Cox model (D-013) gives district hazard ratios from 0.64× (Thane) to 1.8×
+      (Gadchiroli). Raw vs adjusted rank correlation is 0.90.
+    - PH does not hold for districts: year 1 vs later r = 0.47.
+  - Added a README section explaining censoring.
+  - The notebook takes about 17 min. Build notebooks with `nbformat` from a script and run them
+    with `nbclient`. When a builder script puts cell code in a Python string, a `\n` inside an f-string
+    in that code must be written double-escaped (backslash-backslash-n). Otherwise the cell gets a
+    literal line break and a SyntaxError.
+  - **Next:** Week 4, starting with the court congestion feature (see docs/MEMORY.md).

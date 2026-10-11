@@ -43,3 +43,21 @@ recognised from `judge_position` first, because their labels ("petition a", "app
 ambiguous. Magistrate cases are split into summary (SCC / summons) and regular (RCC / warrant).
 0.2% of cases stay "other". Rules are kept instead of a hand-made lookup table so that new years
 and states map without editing a table.
+
+## D-011: Survival models end observation on 2020-03-15 (2026-10-11)
+Decision rates collapse from late March 2020 (COVID lockdown). Leaving those months in would
+read the lockdown as courts getting slower. Models call `survival.censor_at(df)`, which censors
+any case still open on `ADMIN_CENSOR_DATE` (or decided after it) at that date. The processed
+parquet keeps the 2020-09-10 cutoff (D-007), so both views stay available. In practice few
+decisions fall in the gap, so the KM median moves only from 583 to 579 days.
+
+## D-012: Cases pending 9+ years stay censored, not dropped or flagged as stale (2026-10-11)
+About 111k cases were pending 9+ years at the cutoff. Only ~4% of them had no hearing in the two
+years before it, so they are mostly live cases that courts keep listing, not abandoned records.
+
+## D-013: Stratified Cox for district comparisons, with deviation coding (2026-10-11)
+Case categories have very different baseline hazards (bail in days, warrant cases in years), so
+the Cox model is stratified by `case_category` instead of using category dummies. District uses
+deviation (sum-to-zero) coding, so each hazard ratio is relative to the average district, not to
+an arbitrary reference. The model is fitted on a 300k random sample: the full 10M rows only add
+runtime.

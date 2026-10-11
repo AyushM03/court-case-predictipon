@@ -186,3 +186,26 @@ These figures exclude `bad_dates` rows (10,007,058 cases left). Charts are in `r
 - **Slowest courts:** CIVIL COURT J.D. VASAI (64% still pending) and JMFC III Kalyan had decided
   fewer than half their cases by the cutoff. These are court establishments only; there is no
   judge-level scoring (D-006).
+
+### Week 3 survival analysis (`notebooks/03_survival.ipynb`, 2026-10-11)
+Observation ends 2020-03-15 (D-011). Figures 07–10 are in `reports/figures/`.
+- **COVID cutoff (D-011) is a clean-up, not a big change.** Only 2,142 decisions (0.03%) fall
+  between 2020-03-15 and 2020-09-10. The KM median moves from 583 to 579 days.
+- **Long-pending cases are live (D-012).** Of the 111k cases pending 9+ years, 3.6% went 2+ years
+  without a hearing, about the same as other pending cases (2.0%). They stay censored.
+- **Case type sets the clock.** KM medians run from 12 days (bail) to 4.3 years (regular warrant
+  cases). The 18-category log-rank chi-square (3.3M) is 15× the district one (225k).
+- **Log-rank p-values carry no information at this size.** Solapur and Yavatmal have the same
+  median (567 days) and still differ at p < 0.0001. Effect sizes are what count.
+- **Adjusted district effects (stratified Cox):** from 0.64× the average district (Thane) to
+  1.8× (Gadchiroli). Pune (0.79×), Nashik and Kolhapur are also slow. Sindhudurg, Ratnagiri and
+  Nagpur are fast. Later filings are decided about 3% more slowly per filing year.
+- **Case mix changes the middle of the ranking, not the ends.** The rank correlation between raw
+  and adjusted rankings is 0.90. Jalna and Gondia move up 7–10 places once their slow case mix is
+  accounted for, and Raigad drops 10.
+- **Proportional hazards does not hold for districts.** The Schoenfeld test flags 13 of 40
+  covariates. District effects in year 1 and after year 1 correlate only 0.47 (geographic
+  districts). Wardha, Washim and Bhandara are slow early but fast later, and Nagpur is the
+  reverse. A single hazard ratio per district is an average over case age.
+- **Concordance is 0.55** with district and year only, since category goes into the strata. This
+  is not a prediction model yet.

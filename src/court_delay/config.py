@@ -32,3 +32,7 @@ MIN_VALID_DATE = "2000-01-01"
 
 # Censoring cutoff = this quantile of observed decision / last-hearing dates (robust to typo dates).
 CUTOFF_QUANTILE = 0.999
+
+# Week 3 models end observation here and censor later decisions (D-011): decision rates collapse
+# with the COVID lockdown from late March 2020.
+ADMIN_CENSOR_DATE = "2020-03-15"
