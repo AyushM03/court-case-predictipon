@@ -24,7 +24,7 @@
 
 ## Week 4 — Prediction
 - [ ] Baseline: median duration by case type (KM median)
-- [ ] Feature: court congestion at filing (pending cases in that court on the filing date)
+- [x] Feature: court congestion at filing (`features.py`: inflow, 2-year backlog, queue ratio, clearance; D-014)
 - [ ] Cox PH with full features
 - [ ] Gradient-boosted survival model (scikit-survival GBSA or XGBoost AFT)
 - [ ] Compare on C-index + integrated Brier score, time-based split

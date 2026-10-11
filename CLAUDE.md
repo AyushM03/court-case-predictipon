@@ -20,6 +20,7 @@ The project predicts how fast the system is, not who wins, and does not score ju
 .venv/Scripts/python -m court_delay.fetch extract 2010       # optional: loose CSV (ingest doesn't need it)
 .venv/Scripts/python -m court_delay.ingest --state Maharashtra --years 2010 --skip-acts
 .venv/Scripts/python -m court_delay.categories               # add case_category to existing parquet
+.venv/Scripts/python -m court_delay.features                 # congestion features -> model_maharashtra.parquet
 .venv/Scripts/python -m pytest -q
 ```
 
@@ -114,4 +115,10 @@ The project predicts how fast the system is, not who wins, and does not score ju
     with `nbclient`. When a builder script puts cell code in a Python string, a `\n` inside an f-string
     in that code must be written double-escaped (backslash-backslash-n). Otherwise the cell gets a
     literal line break and a SyntaxError.
-  - **Next:** Week 4, starting with the court congestion feature (see docs/MEMORY.md).
+  - Week 4 started: `features.py` adds court congestion features per establishment
+    (`inflow_1y`, `backlog_2y`, `queue_ratio`, `clearance_1y`; D-014). It uses a numba Fenwick
+    tree (added `numba` to requirements) and is checked against brute force. 45 tests pass.
+  - `python -m court_delay.features` writes `data/processed/model_maharashtra.parquet`
+    (8.3M cases filed 2012–2018) in about 1 min.
+  - `court_no` is a court establishment (633 total), not a courtroom.
+  - **Next:** time-based split, KM baseline, Cox, GBSA (see docs/MEMORY.md).

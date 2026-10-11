@@ -8,6 +8,7 @@ lifelines>=0.29
 scikit-learn>=1.4
 scikit-survival
 xgboost
+numba
 shap
 pytest
 httpx

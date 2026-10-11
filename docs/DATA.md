@@ -209,3 +209,14 @@ Observation ends 2020-03-15 (D-011). Figures 07–10 are in `reports/figures/`.
   reverse. A single hazard ratio per district is an average over case age.
 - **Concordance is 0.55** with district and year only, since category goes into the strata. This
   is not a prediction model yet.
+
+### Week 4 congestion features (`features.py`, 2026-10-11)
+Model table: 8,295,874 cases filed 2012-01-01..2018-12-31, administrative censoring at
+2020-03-15 (D-011), 68.3% decided. Built in about 1 min.
+- **Establishment-level counts are large.** Median `inflow_1y` is 3,110 and median `backlog_2y`
+  3,436, because `court_no` is a court complex (median 7.6k cases over 2012–2018), not a courtroom.
+- **`queue_ratio`** (median 1.17) and **`clearance_1y`** (median 0.49) both track duration
+  monotonically. By `queue_ratio` quintile the median observed duration runs 104 → 449 → 519 →
+  617 → 801 days; by `clearance_1y` quintile 788 → 164 days. These are raw (not KM, not adjusted
+  for case type), and part of the effect is case mix: fast bail-heavy courts have short queues.
+- 0.2% of cases have no `clearance_1y` (no filings in the court 1–2 years earlier).

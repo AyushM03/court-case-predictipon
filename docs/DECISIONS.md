@@ -61,3 +61,14 @@ the Cox model is stratified by `case_category` instead of using category dummies
 deviation (sum-to-zero) coding, so each hazard ratio is relative to the average district, not to
 an arbitrary reference. The model is fitted on a 300k random sample: the full 10M rows only add
 runtime.
+
+## D-014: Court congestion as look-back counts per establishment, from 2012 filings (2026-10-11)
+`court_no` is a court establishment (633 in Maharashtra), not a courtroom, so congestion is
+measured per (dist_code, court_no). For a case filed on day t the features count only what was
+known on t: `inflow_1y` (filings in the past year), `backlog_2y` (filings in the past two years
+not yet decided), `queue_ratio` (backlog / inflow) and `clearance_1y` (share of the cohort filed
+1–2 years earlier that was decided by t). A full "all pending cases" count is not possible
+because the data starts in 2010 with no older backlog, so fixed windows are used instead, and the
+model table starts at 2012-01-01 so every window is complete. `features.py` builds
+`data/processed/model_maharashtra.parquet` (8.3M cases) with a numba Fenwick-tree pass per court,
+checked against a brute-force count in `tests/test_features.py`.

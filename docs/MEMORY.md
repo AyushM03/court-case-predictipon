@@ -12,12 +12,17 @@
 - Adjusted district hazard ratios run from 0.64× (Thane) to 1.8× (Gadchiroli). District effects
   are not proportional over case age (year 1 vs later r = 0.47).
 - Findings are in docs/DATA.md.
+- **Week 4 started.** `src/court_delay/features.py` adds court congestion features (D-014) and
+  writes `data/processed/model_maharashtra.parquet`: 8,295,874 cases filed 2012–2018, censored at
+  2020-03-15. `queue_ratio` and `clearance_1y` track duration strongly (raw quintile medians
+  104 → 801 days).
 
 ## Next step
-Week 4, starting with the **court congestion feature**: pending cases in the same court
-(`court_no` within district) on the filing date. Then a time-based split (train 2010–2015 filings,
-test 2016–2018), the KM-median baseline, a full Cox model, and a gradient-boosted survival model,
-compared on C-index and integrated Brier score.
+Week 4 modelling on `model_maharashtra.parquet`: a time-based split (train 2012–2015 filings,
+test 2016–2018; the table starts in 2012 so congestion windows are complete), the KM-median
+baseline by case category, a full Cox model, and a gradient-boosted survival model, compared on
+C-index and integrated Brier score. Test-set filings are heavily censored (up to ~55% for 2018),
+so use IPCW-based metrics (scikit-survival `concordance_index_ipcw`, `integrated_brier_score`).
 
 ## Open questions
 - ~~COVID structural break~~: resolved, observation ends 2020-03-15 (D-011).
