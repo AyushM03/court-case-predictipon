@@ -1,6 +1,6 @@
 # Project Memory
 
-## Current status (2026-10-11)
+## Current status (2026-10-12)
 - **Weeks 1–4 done.** Week 2's acts/sections chart is parked (needs the
   `acts_sections` download; A: has 3.2 GB free).
 - **Observation now ends 2018-12-31 (D-016, replaces D-011).** Most records were last updated in
@@ -59,9 +59,16 @@
   `vercel dev -L` (API through the router; figures only fail in dev mode). Tools for this live in
   the session scratchpad (Vercel CLI 63.1.2, uv), not in the repo.
 
+## Live (D-020)
+- **https://court-delay.onrender.com**: Render free plan, Docker (`render.yaml` Blueprint),
+  redeploys on every push to `main`. The image uses the committed `backend/model/`.
+- Checked 2026-10-12: `/`, `/insights`, `/api/health`, `/api/meta`, `/api/docs`, figures, and a
+  prediction (same numbers as local). Sleeps after ~15 min idle; wake-up takes about a minute.
+- Vercel (D-019) is configured but not used: the build passed, the upload step failed.
+
 ## Next step
-The user deploys from their Vercel account (GitHub import, or `npx vercel --prod`). After the
-first deploy: open `/`, `/insights`, `/api/health`, run a prediction, and check the cold-start time.
+Project complete. Optional extensions: acts/sections chart (needs `acts_sections` download),
+competing risks for transfers and Lok Adalat referrals.
 
 ## Open questions
 - ~~COVID structural break~~: superseded. The data freezes in Feb 2019; observation ends 2018-12-31 (D-016).

@@ -4,6 +4,9 @@ A data science project that models **how long cases take** in India's district c
 survival analysis on the Development Data Lab (DDL) e-Courts dataset (81M cases, 2010–2018).
 Scope: **Maharashtra** (one state keeps the data laptop-sized).
 
+**Live app: https://court-delay.onrender.com** (free hosting: the first visit after a quiet
+spell takes about a minute while the server wakes up).
+
 > The question is *how slow the system is*, not whether any individual litigant or judge is
 > "good" or "bad". The model predicts duration from structural features (court, district, case
 > type, court congestion). It does not predict who wins.
@@ -135,33 +138,30 @@ with every other court that hears that case type. `GET /api/meta` lists district
 case types each court hears. Interactive docs: `/api/docs`.
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/predict -H "Content-Type: application/json" \n     -d '{"court_id": "25-3", "case_category": "civil_suit"}'
+curl -X POST http://127.0.0.1:8000/api/predict -H "Content-Type: application/json" \
+     -d '{"court_id": "25-3", "case_category": "civil_suit"}'
 ```
 
 ## Deployment
 
-### Vercel (main host)
-`vercel.json` defines two [Vercel Services](https://vercel.com/docs/services): the React app
-(`frontend/`, static) and the API (`backend/`, a Python function). Requests to `/api/*` go to the
-API and everything else to the app ([D-019](docs/DECISIONS.md)).
+### Render (live host)
+The app runs at https://court-delay.onrender.com as one Docker web service on Render's free plan
+([D-020](docs/DECISIONS.md)). `render.yaml` is a Render Blueprint: Render builds the
+`Dockerfile` from GitHub and redeploys on every push to `main`; the health check is `/api/health`.
 
-1. Train the model and export it for Vercel (the export is about 17 MB):
+To deploy your own copy:
+1. Train the model and export it (about 17 MB; the export is committed so a plain checkout builds):
    ```bash
    python -m court_delay.train
    python -m court_delay.train --export backend/model
    ```
-2. Deploy either way:
-   - **From GitHub:** push the repository (including `backend/model/`), then import it at
-     vercel.com/new. Vercel reads `vercel.json`; no build settings are needed.
-   - **From your machine:** `npx vercel` for a preview, `npx vercel --prod` for production.
-     `.vercelignore` keeps the raw data and virtual environments out of the upload.
+2. Push to GitHub, then on render.com choose **New + → Blueprint** and pick the repository.
 
-The API function needs only numpy, scipy, XGBoost and FastAPI (`backend/requirements.txt`); it
-predicts without pandas, which keeps the bundle at about 223 MB.
+Free instances sleep after about 15 minutes without traffic; the next request takes about a minute.
 
 ### Docker (any container host)
-One container serves everything: the API, the built React app and the report figures. It needs
-the deployment model, so run `python -m court_delay.train` first.
+One container serves everything: the API, the built React app and the report figures. It uses the
+exported model in `backend/model/`.
 
 ```bash
 docker build -t court-delay .
@@ -169,13 +169,19 @@ docker run -p 8000:8000 court-delay        # http://127.0.0.1:8000
 ```
 
 The image uses only the runtime dependencies in `requirements-api.txt` (CPU-only XGBoost) and
-listens on `$PORT` (default 8000), so it runs on any container host such as Render, Railway,
-Fly.io or Google Cloud Run. The model folder can be overridden with `COURT_DELAY_MODEL_DIR`.
+listens on `$PORT` (default 8000), so it also runs on hosts such as Railway, Fly.io or Google Cloud
+Run. The model folder can be overridden with `COURT_DELAY_MODEL_DIR`.
+
+### Vercel (configured, not used)
+`vercel.json` splits the app into two Vercel Services (static React app and a Python function
+under `/api/*`, [D-019](docs/DECISIONS.md)). The build succeeds, but the first deployment failed
+at the upload step, so the project moved to Render. The function needs only numpy, scipy, XGBoost
+and FastAPI (`backend/requirements.txt`) and is about 223 MB.
 
 ## Data & license
 Data: Development Data Lab, *Judicial Data* (devdatalab.org/judicial-data), CC BY-NC-SA 4.0.
 This project is non-commercial and inherits that license for derived data.
 
 ## Status
-Weeks 1–6 are done except deployment. Details and the next step: `docs/MEMORY.md`. Every
+Weeks 1–6 are done and the app is live on Render. Details: `docs/MEMORY.md`. Every
 analysis choice is recorded in `docs/DECISIONS.md` and every number in `docs/DATA.md`.

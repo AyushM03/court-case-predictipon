@@ -68,7 +68,7 @@ export function PredictPage() {
         {error ??
           (loading
             ? "Predicting…"
-            : pred && `${pred.case_category_label} cases filed at ${pred.court.court_name}, under the court's workload on ${pred.snapshot_date}.`)}
+            : pred && `${pred.case_category_label}, filed at ${pred.court.court_name}, under the court's workload on ${pred.snapshot_date}.`)}
       </p>
 
       {pred && (

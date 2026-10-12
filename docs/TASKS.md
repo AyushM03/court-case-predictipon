@@ -36,4 +36,5 @@
 - [x] Final README with results
 - [x] Deployable container (`Dockerfile`, D-018), tested locally
 - [x] Vercel setup (Services: static app + Python API, D-019), verified with `vercel build` and `vercel dev`
-- [ ] Deploy to Vercel (the user's account: GitHub import or `npx vercel --prod`)
+- [x] ~~Deploy to Vercel~~: build passed, upload failed; moved to Render (D-020)
+- [x] Deploy: live at https://court-delay.onrender.com (Render, Docker, free plan; checked 2026-10-12)
