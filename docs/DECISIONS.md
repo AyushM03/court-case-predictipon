@@ -150,3 +150,10 @@ with an index.html fallback for client routes).
   `/figures/*` (its dev router rewrites before Vite's public folder); the production route table
   checks files first, so this affects local `vercel dev` only. Cold starts load the model
   (about 2 s); the Docker image (D-018) remains an alternative host.
+
+## D-020: Host on Render with the Docker image (2026-10-12)
+The Vercel deploy (D-019) built but failed at "Deploying outputs", and the user chose Render
+instead. Render builds the D-018 `Dockerfile` from GitHub (`render.yaml` Blueprint, free plan,
+health check `/api/health`). The image now copies the committed `backend/model/` (UBJSON) and sets
+`COURT_DELAY_MODEL_DIR`, so it no longer needs the gitignored `data/models/deploy/`. Free instances
+sleep after ~15 minutes idle, so the first request after a pause takes about a minute.

@@ -1,0 +1,9 @@
+# Render Blueprint (D-020): one Docker web service serving the API, React app and figures.
+services:
+  - type: web
+    name: court-delay
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
