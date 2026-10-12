@@ -1,0 +1,16 @@
+# Only src/, the deployment model, figures and the front end source go into the image.
+.venv/
+.git/
+.pytest_cache/
+**/__pycache__/
+_archive/
+notebooks/
+tests/
+docs/
+data/raw/
+data/interim/
+data/processed/
+data/models/eval/
+frontend/node_modules/
+frontend/dist/
+CLAUDE.md

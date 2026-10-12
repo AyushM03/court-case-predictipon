@@ -1,0 +1,8 @@
+# Runtime dependencies of the API container only (training and notebooks: requirements.txt).
+# The API predicts with numpy + XGBoost (court_delay/inference.py), no pandas. XGBoost needs scipy.
+numpy==2.5.3
+scipy==1.18.1
+xgboost-cpu==3.4.1
+fastapi==0.143.0
+uvicorn==0.54.0
+pydantic==2.14.0

@@ -1,5 +1,6 @@
 """Court congestion features match a brute-force count."""
 import numpy as np
+import pytest
 import pandas as pd
 
 from court_delay.features import BACKLOG_DAYS, INFLOW_DAYS, add_congestion
@@ -55,3 +56,17 @@ def test_decided_case_leaves_backlog():
     # On 2015-06-01: case 1 was decided on day 100 (2015-04-11), case 2 is still pending.
     assert out.loc[2, "backlog_2y"] == 1
     assert out.loc[2, "inflow_1y"] == 2
+
+
+def test_court_snapshot_matches_a_case_filed_that_day():
+    from court_delay.features import court_snapshot
+    df = _random_cases()
+    date = pd.Timestamp("2014-06-01")
+    snap = court_snapshot(df, date).set_index(["dist_code", "court_no"])
+    assert len(snap) == df.groupby(["dist_code", "court_no"]).ngroups
+    probe = pd.DataFrame({"dist_code": [1], "court_no": [2], "filing_date": [date],
+                          "duration_days": [0], "event": [0]})
+    want = _brute(pd.concat([df, probe], ignore_index=True)).iloc[-1]
+    got = snap.loc[(1, 2)]
+    assert got["inflow_1y"] == want["inflow_1y"] and got["backlog_2y"] == want["backlog_2y"]
+    assert got["clearance_1y"] == pytest.approx(want["clearance_1y"])

@@ -9,6 +9,8 @@ scikit-learn>=1.4
 scikit-survival
 xgboost
 numba
+fastapi
+uvicorn
 shap
 pytest
 httpx

@@ -1,31 +1,70 @@
 # Project Memory
 
 ## Current status (2026-10-11)
-- **Weeks 1–3 done.** Week 2's acts/sections chart is parked (needs the `acts_sections` download;
-  A: has 3.2 GB free).
-- 10,059,428 Maharashtra cases (2010–2018) are in `data/processed/cases_maharashtra.parquet`
-  (10,007,058 after dropping `bad_dates`).
-- `notebooks/03_survival.ipynb`: KM by category, log-rank tests, a stratified Cox model of
-  district effects, and PH checks. Figures 07–10. It runs in about 17 min (mostly Cox fits).
-- `src/court_delay/survival.py`: `censor_at` (COVID cutoff, D-011), `aggregate` (weighted KM),
-  `is_court_system`.
-- Adjusted district hazard ratios run from 0.64× (Thane) to 1.8× (Gadchiroli). District effects
-  are not proportional over case age (year 1 vs later r = 0.47).
-- Findings are in docs/DATA.md.
-- **Week 4 started.** `src/court_delay/features.py` adds court congestion features (D-014) and
-  writes `data/processed/model_maharashtra.parquet`: 8,295,874 cases filed 2012–2018, censored at
-  2020-03-15. `queue_ratio` and `clearance_1y` track duration strongly (raw quintile medians
-  104 → 801 days).
+- **Weeks 1–4 done.** Week 2's acts/sections chart is parked (needs the
+  `acts_sections` download; A: has 3.2 GB free).
+- **Observation now ends 2018-12-31 (D-016, replaces D-011).** Most records were last updated in
+  mid-February 2019; later decisions are largely missing. Notebook 03 and all Week 3 numbers were
+  re-run: KM median 536 days, districts 0.63× (Thane) to 1.81× (Gadchiroli), later filings ~2%
+  faster per year.
+- 10,059,428 Maharashtra cases (2010–2018) in `data/processed/cases_maharashtra.parquet`.
+- `src/court_delay/features.py`: court congestion features per establishment (D-014), writes
+  `model_maharashtra.parquet` (8.3M cases filed 2012–2018).
+- `src/court_delay/models.py`: KM baseline, stratified Cox, XGBoost AFT, XGBoost Cox + Breslow, and
+  `evaluate` (Uno C, integrated Brier up to 2 years, IPCW from the test set). D-015.
+- `notebooks/04_models.ipynb` (~20 min): XGBoost Cox is best (C 0.699, IBS 0.188) but plain Cox is
+  close (0.692, 0.188); baseline 0.651 / 0.200. Saved model: `data/models/xgb_cox.json` + `xgb_cox_H0.npy`.
+- Calibration drifts: 2017–2018 filings are decided faster early on than predicted.
+- `notebooks/05_shap.ipynb` (~2 min): exact TreeSHAP via `XGBCox.shap()`. Category 44% of |SHAP|,
+  congestion ~30%, district 13%. Nagpur's speed is explained by light court load.
+- Saved-model API: `XGBCox.load(DATA / "models")`, `.predict_survival(df)`, `.shap(df)`,
+  `models.median_days(surv)`. Prepare request rows with `models.prepare`.
+- RAM is tight (7.9 GB; other apps commit most of it). Load with `models.load()` (categoricals),
+  sample, and `del` the full frames before fitting.
+
+## API (Week 5, done)
+- `python -m court_delay.train` (~8 min) writes `data/models/deploy/`: XGBoost Cox refit on all
+  2012–2018 filings (1,002 trees, daily baseline to ~7 years), `meta.json` (training categories,
+  clearance fill), and `courts.parquet` (632 active courts: name, district, judge position,
+  congestion for a case filed 2019-01-01, categories heard). D-017.
+- The evaluation model now lives in `data/models/eval/` (notebooks 04/05).
+- `uvicorn court_delay.api:app`: `/health`, `/meta`, `/predict` (curve to 5 years, quartiles,
+  P(decided by 1/2/3/5 years), SHAP explanation, rank among courts hearing that case type,
+  warnings). First request ~2 s (model load), then ~0.3 s.
+
+## Front end (Week 6, done)
+- `frontend/`: React 18 + TypeScript + Vite + React Router (user asked for a component-based
+  framework, not plain HTML/JS). Components: CourtPicker, StatTiles, DecisionCurve (own SVG,
+  sizes to its container, hover tooltip, table view), Drivers (SHAP bars), Workload, Layout.
+  Pages: Predict (selection in the URL) and Insights (figures 07–18 with captions).
+- Dev: uvicorn on :8000 + `npm run dev` (Vite proxies /meta, /predict, /figures). Prod:
+  `npm run build`; FastAPI serves `frontend/dist` with an index.html fallback for client routes.
+- Checked with headless Chrome at 1280px and 500px (Chrome's minimum window width).
+
+## Ship (Week 6)
+- Notebook 02 re-run under D-016 (figures 01–06 now consistent; findings in docs/DATA.md).
+- README has Results and Limitations sections and a Deployment section.
+- `Dockerfile` + `.dockerignore` + `requirements-api.txt` (D-018): one container serving API,
+  React app and figures. Built and tested locally (`docker build -t court-delay .`,
+  `docker run -p 8000:8000 court-delay`); predictions match local exactly; image 594 MB after dropping pandas (D-019).
+
+## Vercel (D-019)
+- `vercel.json` with Services: `web` = frontend/ (static Vite), `api` = backend/ (FastAPI,
+  `main:app`, `includeFiles: ../src/court_delay/**/*.py`). API is under `/api/*` everywhere now.
+- `backend/model/` holds the exported model (`python -m court_delay.train --export backend/model`,
+  UBJSON booster). It must be committed for GitHub deployments.
+- `inference.py` predicts with numpy + XGBoost only; identical to the pandas path on all 12,008
+  court × case-type rows. Function bundle 223 MB (limit for the fast path: 250 MB).
+- Verified locally: `vercel build` (bundle contents and size, production route table) and
+  `vercel dev -L` (API through the router; figures only fail in dev mode). Tools for this live in
+  the session scratchpad (Vercel CLI 63.1.2, uv), not in the repo.
 
 ## Next step
-Week 4 modelling on `model_maharashtra.parquet`: a time-based split (train 2012–2015 filings,
-test 2016–2018; the table starts in 2012 so congestion windows are complete), the KM-median
-baseline by case category, a full Cox model, and a gradient-boosted survival model, compared on
-C-index and integrated Brier score. Test-set filings are heavily censored (up to ~55% for 2018),
-so use IPCW-based metrics (scikit-survival `concordance_index_ipcw`, `integrated_brier_score`).
+The user deploys from their Vercel account (GitHub import, or `npx vercel --prod`). After the
+first deploy: open `/`, `/insights`, `/api/health`, run a prediction, and check the cold-start time.
 
 ## Open questions
-- ~~COVID structural break~~: resolved, observation ends 2020-03-15 (D-011).
+- ~~COVID structural break~~: superseded. The data freezes in Feb 2019; observation ends 2018-12-31 (D-016).
 - ~~Cases with a disposition but no date~~: resolved. Only 1,717 cases (0.02%) are real ones,
   and they stay censored.
 - Transferred and Lok Adalat referrals (~11% of decisions) count as events for now (D-005).

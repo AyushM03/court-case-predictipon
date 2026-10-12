@@ -13,19 +13,9 @@ import re
 from pathlib import Path
 
 import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
 
 from court_delay import config as C
-
-CRIMINAL = {
-    "summary_criminal", "regular_criminal", "sessions_special", "bail_remand",
-    "criminal_misc", "criminal_appeal_revision", "domestic_violence", "juvenile",
-}
-CIVIL = {
-    "civil_suit", "civil_appeal_revision", "civil_misc", "execution", "motor_accident",
-    "land_acquisition", "arbitration_cooperative", "family", "labour", "succession",
-}
+from court_delay.labels import CIVIL, CRIMINAL  # noqa: F401  (re-exported)
 
 # judge_position (normalised) -> category, checked before the label.
 COURT_RULES: list[tuple[str, str]] = [
@@ -109,6 +99,8 @@ def add_case_category(df: pd.DataFrame) -> pd.DataFrame:
 
 def update_parquet(path: Path) -> None:
     """Add the category columns to an existing processed table, one row group at a time."""
+    import pyarrow as pa                  # not needed by the API, which only reads CRIMINAL
+    import pyarrow.parquet as pq
     src = pq.ParquetFile(path)
     tmp = path.with_suffix(".tmp.parquet")
     writer = None

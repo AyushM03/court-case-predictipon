@@ -3,7 +3,7 @@ import pandas as pd
 
 from court_delay import config as C
 
-COURT_SYSTEM_PATTERN = r"^(Mumbai|Maharashtra|Mah )"
+from court_delay.labels import COURT_SYSTEM_PATTERN
 
 
 def censor_at(df: pd.DataFrame, date=C.ADMIN_CENSOR_DATE) -> pd.DataFrame:

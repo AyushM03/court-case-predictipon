@@ -22,7 +22,7 @@ from court_delay.survival import censor_at
 BACKLOG_DAYS = 730
 INFLOW_DAYS = 365
 FEATURE_START = "2012-01-01"   # first filing date with full look-back windows
-MODEL_FILE = "model_maharashtra.parquet"
+MODEL_FILE = C.MODEL_FILE
 
 
 @numba.njit(cache=True)
@@ -87,6 +87,21 @@ def add_congestion(df: pd.DataFrame) -> pd.DataFrame:
     with np.errstate(invalid="ignore", divide="ignore"):
         df["clearance_1y"] = np.where(out["cohort"] > 0, out["cleared"] / out["cohort"], np.nan)
     return df
+
+
+def court_snapshot(df: pd.DataFrame, date) -> pd.DataFrame:
+    """Congestion features each court would give a case filed on `date` (one row per court).
+
+    Adds a placeholder case per court filed on `date` and runs `add_congestion`, so the
+    definitions are exactly those the model was trained on. Needs the same columns as
+    `add_congestion`; use the processed table before administrative censoring."""
+    courts = df[["dist_code", "court_no"]].drop_duplicates()
+    probe = courts.assign(filing_date=pd.Timestamp(date), duration_days=0, event=0)
+    cols = ["dist_code", "court_no", "filing_date", "duration_days", "event"]
+    both = pd.concat([df[cols], probe[cols]], ignore_index=True)
+    out = add_congestion(both).iloc[len(df):]
+    keep = ["dist_code", "court_no", "inflow_1y", "backlog_2y", "queue_ratio", "clearance_1y"]
+    return out[keep].reset_index(drop=True)
 
 
 MODEL_COLS = ["ddl_case_id", "year", "filing_date", "dist_code", "court_no", "district_name",

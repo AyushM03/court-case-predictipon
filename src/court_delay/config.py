@@ -1,4 +1,5 @@
 """Paths and expected raw-data schema. Edit names here if the real DDL files differ."""
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -6,6 +7,9 @@ DATA = ROOT / "data"
 RAW = DATA / "raw"
 INTERIM = DATA / "interim"
 PROCESSED = DATA / "processed"
+MODEL_FILE = "model_maharashtra.parquet"          # modelling table written by features.py
+# Deployment model + court table (train.py writes it, api.py reads it; D-017).
+DEPLOY = Path(os.environ.get("COURT_DELAY_MODEL_DIR", DATA / "models" / "deploy"))
 
 CHUNK_ROWS = 1_000_000
 
@@ -33,6 +37,6 @@ MIN_VALID_DATE = "2000-01-01"
 # Censoring cutoff = this quantile of observed decision / last-hearing dates (robust to typo dates).
 CUTOFF_QUANTILE = 0.999
 
-# Week 3 models end observation here and censor later decisions (D-011): decision rates collapse
-# with the COVID lockdown from late March 2020.
-ADMIN_CENSOR_DATE = "2020-03-15"
+# Survival models end observation here and censor later decisions (D-016, replaces D-011): most
+# records were last updated in mid-February 2019, so later decisions are largely missing.
+ADMIN_CENSOR_DATE = "2018-12-31"

@@ -32,7 +32,11 @@ data/processed/cases_<state>.parquet        ← single source for all analysis
 | `ingest.py` | raw → interim → processed survival table (CLI) |
 | `features.py` | feature engineering (Week 4) |
 | `models.py` | training, evaluation (C-index, IBS), persistence (Week 4) |
-| `api/` | FastAPI app (Week 5) |
+| `src/court_delay/api.py` | FastAPI app: `/api/health`, `/api/meta`, `/api/predict` (D-017, D-019); locally and in Docker also serves the built front end and `/figures` |
+| `src/court_delay/inference.py` | numpy + XGBoost prediction path used by the API (no pandas, D-019) |
+| `backend/` | Vercel API service: `main.py` entrypoint, slim `requirements.txt`, exported `model/` |
+| `vercel.json` | Vercel Services: `web` (frontend/) and `api` (backend/) with `/api/*` routing |
+| `frontend/` | React + TypeScript (Vite): `components/` (CourtPicker, StatTiles, DecisionCurve, Drivers, Workload, Layout), `pages/` (Predict, Insights) |
 
 ## Evaluation
 - **Time-based split**: train on cases filed 2010–2015, test on 2016–2018 filings. Random splits leak

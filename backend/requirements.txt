@@ -1,0 +1,7 @@
+# Runtime dependencies of the Vercel API function only (D-019). Training: ../requirements.txt.
+# The API predicts with numpy + XGBoost (court_delay/inference.py), no pandas. XGBoost needs scipy.
+numpy==2.5.3
+scipy==1.18.1
+xgboost-cpu==3.4.1
+fastapi==0.143.0
+pydantic==2.14.0

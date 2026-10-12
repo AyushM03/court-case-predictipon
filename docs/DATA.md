@@ -187,36 +187,102 @@ These figures exclude `bad_dates` rows (10,007,058 cases left). Charts are in `r
   fewer than half their cases by the cutoff. These are court establishments only; there is no
   judge-level scoring (D-006).
 
+### Week 2 EDA re-run under D-016 (`notebooks/02_eda.ipynb`, 2026-10-11)
+Figures 01–06 now end observation at 2018-12-31. These numbers replace the Week 2 ones above.
+- KM median **536 days** (decided-only 233); 57% / 33% / 19% still pending after 1 / 3 / 5 years.
+- Category medians: bail 12 days to RCC warrant cases 3.8 years; execution 3.6 years, civil suits
+  3.2 years. Civil 780 days vs criminal 445 days.
+- Districts: Gadchiroli 0.3 years to Thane 2.3 years (MACT Mumbai 3.5 years); correlation with
+  criminal share −0.48.
+- Share decided within one year, 2010 → 2017 filings: criminal 37% → 49%, civil 27% → 39%.
+  2018 filings are left out (no full year of follow-up).
+- The tail is live: past 8 years, 8.1k of 72k cases at risk are decided; 8% still pending at
+  8 years. The old "plateau after 9 years" is outside the observable window.
+
 ### Week 3 survival analysis (`notebooks/03_survival.ipynb`, 2026-10-11)
-Observation ends 2020-03-15 (D-011). Figures 07–10 are in `reports/figures/`.
-- **COVID cutoff (D-011) is a clean-up, not a big change.** Only 2,142 decisions (0.03%) fall
-  between 2020-03-15 and 2020-09-10. The KM median moves from 583 to 579 days.
-- **Long-pending cases are live (D-012).** Of the 111k cases pending 9+ years, 3.6% went 2+ years
-  without a hearing, about the same as other pending cases (2.0%). They stay censored.
-- **Case type sets the clock.** KM medians run from 12 days (bail) to 4.3 years (regular warrant
-  cases). The 18-category log-rank chi-square (3.3M) is 15× the district one (225k).
-- **Log-rank p-values carry no information at this size.** Solapur and Yavatmal have the same
-  median (567 days) and still differ at p < 0.0001. Effect sizes are what count.
-- **Adjusted district effects (stratified Cox):** from 0.64× the average district (Thane) to
-  1.8× (Gadchiroli). Pune (0.79×), Nashik and Kolhapur are also slow. Sindhudurg, Ratnagiri and
-  Nagpur are fast. Later filings are decided about 3% more slowly per filing year.
+Observation ends 2018-12-31 (D-016, which replaced the 2020-03-15 cutoff of D-011; all numbers
+below are from the re-run). Figures 07–10 are in `reports/figures/`.
+- **The data freezes in mid-February 2019 (D-016).** Last hearings of 2.4M pending cases stop in
+  the week of 11 February 2019. Recorded decisions run at about 110k a month through 2018, then
+  88k (Jan 2019), 29k (Feb) and about 10k a month after. Censoring at 2018-12-31 moves 237k
+  decisions (3.3%) to censored and the KM median from 583 to **536 days**.
+- **Long-pending cases are live (D-012).** Of the 111k cases pending 9+ years, only 1.6% had no
+  hearing in the two years before the cutoff. They stay censored.
+- **Case type sets the clock.** KM medians run from 12 days (bail) to 3.8 years (regular warrant
+  cases). The 18-category log-rank chi-square (3.3M) is 14× the district one (229k).
+- **Log-rank p-values carry no information at this size.** Bhandara and Dhule have the same
+  median (514 days) and still differ at p < 0.0001. Effect sizes are what count.
+- **Adjusted district effects (stratified Cox):** from 0.63× the average district (Thane) to
+  1.81× (Gadchiroli). Pune (0.79×), Nashik and Kolhapur are also slow. Sindhudurg, Ratnagiri and
+  Nandurbar are fast.
+- **Courts got slightly faster, not slower.** Each later filing year is decided about 2% faster
+  (HR 1.023). With the 2020 cutoff this showed as a 3% slowdown per year, because recent
+  filings carried most of the decisions missing after the freeze.
 - **Case mix changes the middle of the ranking, not the ends.** The rank correlation between raw
-  and adjusted rankings is 0.90. Jalna and Gondia move up 7–10 places once their slow case mix is
-  accounted for, and Raigad drops 10.
-- **Proportional hazards does not hold for districts.** The Schoenfeld test flags 13 of 40
+  and adjusted rankings is 0.89. Jalna, Latur and Osmanabad move up 8–9 places once their slow
+  case mix is accounted for, and Raigad drops 11.
+- **Proportional hazards does not hold for districts.** The Schoenfeld test flags 12 of 40
   covariates. District effects in year 1 and after year 1 correlate only 0.47 (geographic
-  districts). Wardha, Washim and Bhandara are slow early but fast later, and Nagpur is the
-  reverse. A single hazard ratio per district is an average over case age.
-- **Concordance is 0.55** with district and year only, since category goes into the strata. This
+  districts). Wardha, Washim, Bhandara and Gondia are slow early but fast later, and Nagpur is
+  the reverse. A single hazard ratio per district is an average over case age.
+- **Concordance is 0.57** with district and year only, since category goes into the strata. This
   is not a prediction model yet.
 
 ### Week 4 congestion features (`features.py`, 2026-10-11)
-Model table: 8,295,874 cases filed 2012-01-01..2018-12-31, administrative censoring at
-2020-03-15 (D-011), 68.3% decided. Built in about 1 min.
+Model table: 8,295,874 cases filed 2012-01-01..2018-12-31, censored at 2018-12-31 (D-016).
+Built in about 1 min. The features only use decisions before each filing date, so the cutoff
+change does not affect them.
 - **Establishment-level counts are large.** Median `inflow_1y` is 3,110 and median `backlog_2y`
   3,436, because `court_no` is a court complex (median 7.6k cases over 2012–2018), not a courtroom.
 - **`queue_ratio`** (median 1.17) and **`clearance_1y`** (median 0.49) both track duration
-  monotonically. By `queue_ratio` quintile the median observed duration runs 104 → 449 → 519 →
+  monotonically. With the earlier 2020 cutoff, the median observed duration by `queue_ratio` quintile runs 104 → 449 → 519 →
   617 → 801 days; by `clearance_1y` quintile 788 → 164 days. These are raw (not KM, not adjusted
   for case type), and part of the effect is case mix: fast bail-heavy courts have short queues.
 - 0.2% of cases have no `clearance_1y` (no filings in the court 1–2 years earlier).
+
+### Week 4 model comparison (`notebooks/04_models.ipynb`, 2026-10-11)
+Train on 2012–2015 filings (4.37M, 21% still pending), test on 2016–2018 filings (3.93M, 49%
+pending), observation ends 2018-12-31 (D-015, D-016). Scored on a fixed 50k test sample up to
+2 years; metrics in `reports/model_metrics.csv`, figures 11–13.
+
+| model | Uno's C | integrated Brier | Brier 1y | Brier 2y | fit |
+|---|---|---|---|---|---|
+| KM by category (baseline) | 0.651 | 0.200 | 0.209 | 0.207 | 1 s |
+| Cox, stratified by category (200k) | 0.692 | **0.188** | 0.195 | 0.199 | 33 s |
+| XGBoost AFT, log-normal σ = 1.8 (1.5M) | 0.696 | 0.197 | 0.206 | 0.208 | 6 min |
+| **XGBoost Cox + Breslow (1.5M)** | **0.699** | **0.188** | 0.195 | 0.197 | 5 min |
+
+- **Features beyond case type add about 0.05 C-index** and cut the Brier score by 6%. Boosting
+  adds little over a linear stratified Cox (0.699 vs 0.692 C, equal Brier).
+- **AFT ranks well but is poorly calibrated.** Its single log-normal shape cannot fit the mix of
+  same-day closures and multi-year cases; the tuned σ (1.8) is wide. Not worth pursuing.
+- **What the boosted model uses (share of split gain):** case category 42%, congestion features
+  38% (queue ratio 16%, clearance 8%, inflow 7%, backlog 7%), district 12%, judge position 8%.
+- **Cox congestion effects (per SD, other features fixed):** more backlog for the same inflow
+  means slower decisions (backlog HR 0.48, inflow 1.93: the two only make sense together), and
+  courts that cleared more of their older cohort decide faster (clearance HR 1.08).
+- **Calibration drifts with time.** 2016 filings are well calibrated. 2017 and 2018 filings are
+  decided faster in their first year than predicted (about 6 points more decided at 6 months for
+  2018), matching the ~2% per year speed-up in Week 3. Training only on older filings misses it.
+- **Before D-016** (cutoff 2020-03-15) the same comparison gave the same ranking (C 0.650 /
+  0.691 / 0.698 / 0.699) but observed curves flattened at the February 2019 data freeze.
+
+### Week 4 SHAP explanations (`notebooks/05_shap.ipynb`, 2026-10-11)
+Exact TreeSHAP from XGBoost (`pred_contribs`, native categoricals) for the XGBoost Cox model on
+20k test cases (2016–2018 filings); 84 s. Values are log-hazard contributions, shown as
+decision-rate multipliers (above 1× = decided sooner). Figures 14–18.
+- **Share of total |SHAP|:** case category 44%, district 13%, queue ratio 12%, judge position 10%,
+  backlog 6%, clearance 6%, inflow 6%, criminal flag 3%. Congestion together is about 30%.
+- **Case category:** bail 8.4× the average case's rate, criminal misc 2.1×, family 1.7×; regular
+  warrant cases 0.52×, execution 0.51×, arbitration/co-operative 0.42×.
+- **Queue ratio has a clear dose-response:** about 1.6× at a ratio of 0.3, 1× near 1.1, 0.9× from
+  1.5 up. Clearance rate rises gently from 0.95× to 1.15×. Inflow and backlog on their own add
+  little once the ratio is in.
+- **District effects mostly survive congestion** (rank correlation 0.81 with the Week 3 Cox
+  ranking): Thane 0.73×, Raigad 0.80×, Pune 0.87× slowest; Gadchiroli 1.47×, Sindhudurg 1.45×,
+  Wardha 1.38× fastest. **Nagpur** drops from 5th fastest (Week 3) to 27th of 32: its speed is
+  explained by lightly loaded courts.
+- **Worked example:** a 2016 Pune civil suit (queue ratio 1.58) gets 0.32× the average rate and a
+  predicted median beyond 2 years; case type (0.63×), district (0.75×) and queue ratio (0.78×)
+  drive it.
+- SHAP explains the model, not causes: congestion and district are correlated and share credit.
